@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from sqlalchemy.orm import Session
 
-from crawler import get_latest_posts
+from scraper import login_and_scrape
 from database.database import SessionLocal
 from database.models import Post
 
@@ -11,7 +11,7 @@ app = FastAPI()
 # veritabanından tüm gönderileri alır ve döndürür.
 @app.get('/posts')
 async def get_posts():
-    get_latest_posts()
+    await login_and_scrape()
     with SessionLocal() as db:
         return db.query(Post).all()
 

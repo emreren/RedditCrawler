@@ -12,7 +12,7 @@ class Post(Base):
     title = Column(String)
     content = Column(String, nullable=True)
     author = Column(String)
-    upvotes = Column(Integer)
+    upvotes = Column(String)
 
     def __repr__(self):
         return f'<Post {self.id}>'
