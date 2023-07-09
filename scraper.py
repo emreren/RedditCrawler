@@ -10,7 +10,7 @@ async def login_and_scrape():
     session = SessionLocal()
 
     async with async_playwright() as playwright:
-        browser = await playwright.chromium.launch(headless=False)
+        browser = await playwright.chromium.launch(headless=True)
         page = await browser.new_page()
 
         # Burada giriş yapma işlemini gerçekleştirin (kullanıcı adı ve şifrenizi girin)               
