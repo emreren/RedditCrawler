@@ -3,8 +3,9 @@ from playwright.async_api import async_playwright
 
 from database.database import SessionLocal
 from database.models import Post
+from datetime import datetime, timedelta
 
-# Kullanıcı adı, şifre, subreddit'i ve veritabanı dosyası adını ayarlayın
+# Kullanıcı adı, şifre, subreddit adını ayarlayın
 username = "CHANGE_ME"
 password = "CHANGE_ME"
 subreddit_name = "cybersecurity"
@@ -14,8 +15,21 @@ async def login_and_scrape():
     # Veritabanı bağlantısı ve oturumu oluşturma
     session = SessionLocal()
 
+    # Zamanı hesaplama
+    def parse_time_string(time_string):
+        if 'minute' in time_string:
+            minutes_ago = int(time_string.split()[0])
+            time_ago = datetime.now() - timedelta(minutes=minutes_ago)
+        elif 'hour' in time_string:
+            hours_ago = int(time_string.split()[0])
+            time_ago = datetime.now() - timedelta(hours=hours_ago)
+        else:
+            time_ago = None
+
+        return time_ago
+
     async with async_playwright() as playwright:
-        browser = await playwright.chromium.launch(headless=False)
+        browser = await playwright.chromium.launch(headless=True)
         page = await browser.new_page()
 
         # Burada giriş yapma işlemini gerçekleştirin (kullanıcı adı ve şifrenizi girin)               
@@ -29,7 +43,8 @@ async def login_and_scrape():
             pass
 
         # Giriş yapıldıktan sonra hedef subreddit sayfasına gidin
-        await page.goto(f'https://reddit.com/r/{subreddit_name}/new', timeout=60000)
+        await page.goto(f'https://reddit.com/r/{subreddit_name}/new/', timeout=60000)
+        await page.keyboard.press('End')
         await page.keyboard.press('End')
         await page.wait_for_load_state('load', timeout=60000)
 
@@ -61,18 +76,21 @@ async def login_and_scrape():
             # time yakalama
             post_timestamp_element = post.select_one('span[data-testid="post_timestamp"]')
             post_timestamp = post_timestamp_element.get_text(strip=True) if post_timestamp_element else ''
+            time_ago = parse_time_string(post_timestamp)
+            formatted_time = time_ago.strftime('%Y-%m-%d %H:%M') if time_ago else ''
 
             # veritabanına ekleme
             if session.query(Post).filter(Post.title == title).first():
                 continue
-            post = Post(title=title, content=content, author=author, upvotes=upvotes, time=post_timestamp)
+            post = Post(time=formatted_time, upvotes=upvotes, author=author, title=title, content=content)
             session.add(post)
 
-            print('Title:', title)
-            print('Content:', content)
+            print('Time:', formatted_time)
             print('Upvotes:', upvotes)
             print('Author:', author)
-            print('Time:', post_timestamp)
+            print('Title:', title)
+            print('Content:', content)
+
 
         session.commit()
         session.close()

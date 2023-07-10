@@ -8,11 +8,12 @@ class Post(Base):
     __tablename__ = 'posts'
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    time = Column(String)
+    upvotes = Column(String)
+    author = Column(String)
     title = Column(String)
     content = Column(String, nullable=True)
-    author = Column(String)
-    upvotes = Column(String)
-    time = Column(String)
+
 
     def __repr__(self):
         return f'<Post {self.id}>'
