@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, DateTime
 
 from database.database import Base, engine
 
@@ -8,7 +8,7 @@ class Post(Base):
     __tablename__ = 'posts'
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    time = Column(String)
+    time = Column(DateTime)
     upvotes = Column(String)
     author = Column(String)
     title = Column(String)

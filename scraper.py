@@ -4,6 +4,7 @@ from playwright.async_api import async_playwright
 from database.database import SessionLocal
 from database.models import Post
 from datetime import datetime, timedelta
+import dateparser
 
 # Kullanıcı adı, şifre, subreddit adını ayarlayın
 username = "CHANGE_ME"
@@ -15,24 +16,11 @@ async def login_and_scrape():
     # Veritabanı bağlantısı ve oturumu oluşturma
     session = SessionLocal()
 
-    # Zamanı hesaplama
-    def parse_time_string(time_string):
-        if 'minute' in time_string:
-            minutes_ago = int(time_string.split()[0])
-            time_ago = datetime.now() - timedelta(minutes=minutes_ago)
-        elif 'hour' in time_string:
-            hours_ago = int(time_string.split()[0])
-            time_ago = datetime.now() - timedelta(hours=hours_ago)
-        else:
-            time_ago = None
-
-        return time_ago
-
     async with async_playwright() as playwright:
         browser = await playwright.chromium.launch(headless=True)
         page = await browser.new_page()
 
-        # Burada giriş yapma işlemini gerçekleştirin (kullanıcı adı ve şifrenizi girin)               
+        # Burada giriş yapma işlemini gerçekleştirin (kullanıcı adı ve şifrenizi girilir)
         await page.goto("https://www.reddit.com/login")
         await page.fill('input[name="username"]', username)
         await page.fill('input[name="password"]', password)
@@ -76,16 +64,22 @@ async def login_and_scrape():
             # time yakalama
             post_timestamp_element = post.select_one('span[data-testid="post_timestamp"]')
             post_timestamp = post_timestamp_element.get_text(strip=True) if post_timestamp_element else ''
-            time_ago = parse_time_string(post_timestamp)
-            formatted_time = time_ago.strftime('%Y-%m-%d %H:%M') if time_ago else ''
+            parsed_date = dateparser.parse(post_timestamp)
+            current_date = datetime.now()
 
-            # veritabanına ekleme
+            # Şu anki tarihten çözümlenen tarihi çıkararak geçmiş zamanı hesapla
+            time_difference = current_date - parsed_date
+
+            # Geçmiş zamandan şu anki tarihi çıkararak geçen süreyi hesapla
+            elapsed_time = timedelta(seconds=time_difference.total_seconds())
+
+            # Yakalamaları veritabanına ekleme
             if session.query(Post).filter(Post.title == title).first():
                 continue
-            post = Post(time=formatted_time, upvotes=upvotes, author=author, title=title, content=content)
+            post = Post(time= elapsed_time , upvotes=upvotes, author=author, title=title, content=content)
             session.add(post)
 
-            print('Time:', formatted_time)
+            print('Time:', elapsed_time)
             print('Upvotes:', upvotes)
             print('Author:', author)
             print('Title:', title)
