@@ -8,3 +8,7 @@ engine = create_engine(DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
+
+# Test veritabanı için
+test_engine = create_engine('sqlite:///:memory:', echo=True)
+TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)

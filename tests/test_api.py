@@ -1,20 +1,18 @@
 import pytest
 from fastapi.testclient import TestClient
-from database.database import SessionLocal, engine
+from database.database import TestSessionLocal, test_engine
 from database.models import Base, Post
 from main import app
+import datetime
 
 client = TestClient(app)
 
-
-# Test veritabanını oluşturmak için kullanılacak pytest fixture'ı
+# Test veritabanı için pytest fixture'ı
 @pytest.fixture
 def test_db():
-    # Test veritabanını oluştur
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=test_engine)
 
-    # Test veritabanına bazı örnek veriler ekleyelim
-    with SessionLocal() as db:
+    with TestSessionLocal() as db:
         # Örnek gönderi verileri
         posts_data = [
             {
@@ -46,7 +44,7 @@ def test_db():
     yield
 
     # Testler tamamlandıktan sonra veritabanını temizle
-    Base.metadata.drop_all(bind=engine)
+    Base.metadata.drop_all(bind=test_engine)
 
 
 def test_get_posts(test_db):
@@ -59,7 +57,6 @@ def test_get_posts(test_db):
 
 
 def test_get_post(test_db):
-    # Örnek bir post_id değeri
     post_id = 1
     response = client.get(f'/posts/{post_id}')
     assert response.status_code == 200
@@ -67,7 +64,6 @@ def test_get_post(test_db):
 
 
 def test_delete_post(test_db):
-    # Örnek bir post_id değeri
     post_id = 1
     response = client.delete(f'/posts/{post_id}')
     assert response.status_code == 200
