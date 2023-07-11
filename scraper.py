@@ -20,7 +20,7 @@ async def login_and_scrape():
         browser = await playwright.chromium.launch(headless=True)
         page = await browser.new_page()
 
-        # Burada giriş yapma işlemini gerçekleştirin (kullanıcı adı ve şifrenizi girilir)
+        # Burada giriş yapma işlemini gerçekleştirir
         await page.goto("https://www.reddit.com/login")
         await page.fill('input[name="username"]', username)
         await page.fill('input[name="password"]', password)
@@ -30,17 +30,17 @@ async def login_and_scrape():
         except:
             pass
 
-        # Giriş yapıldıktan sonra hedef subreddit sayfasına gidin
+        # Giriş yapıldıktan sonra hedef subreddit sayfasına gider
         await page.goto(f'https://reddit.com/r/{subreddit_name}/new/', timeout=60000)
         await page.keyboard.press('End')
         await page.keyboard.press('End')
         await page.wait_for_load_state('load', timeout=60000)
 
-        # Sayfanın içeriğini alın   
+        # Sayfanın içeriğini alır
         page_content = await page.content()
         await browser.close()
 
-        # BeautifulSoup kullanarak postları yakalayın
+        # BeautifulSoup kullanarak postları yakalar
         soup = BeautifulSoup(page_content, 'html.parser')
         post_elements = soup.select('.Post')
         for post in post_elements:
@@ -66,14 +66,13 @@ async def login_and_scrape():
             post_timestamp = post_timestamp_element.get_text(strip=True) if post_timestamp_element else ''
             parsed_date = dateparser.parse(post_timestamp)
             current_date = datetime.now()
-
-            # Şu anki tarihten çözümlenen tarihi çıkararak geçmiş zamanı hesapla
+            # Şu anki tarihten çözümlenen tarihi çıkararak geçmiş zamanı hesaplar
             time_difference = current_date - parsed_date
+            # Geçmiş zamandan şu anki tarihi çıkararak geçen süreyi hesaplar
+            elapsed_time = current_date - time_difference
 
-            # Geçmiş zamandan şu anki tarihi çıkararak geçen süreyi hesapla
-            elapsed_time = timedelta(seconds=time_difference.total_seconds())
 
-            # Yakalamaları veritabanına ekleme
+            # Yakalamaları veritabanına ekler
             if session.query(Post).filter(Post.title == title).first():
                 continue
             post = Post(time= elapsed_time , upvotes=upvotes, author=author, title=title, content=content)
